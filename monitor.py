@@ -29,19 +29,21 @@ def check_earnings():
             ticker = yf.Ticker(symbol)
             cal = ticker.calendar
             
-            if cal is None or cal.empty:
+            if not cal:
                 continue
-                
-            # 获取财报日期
-            if 'Earnings Date' in cal.columns:
-                earnings_dates = cal['Earnings Date']
-            elif hasattr(cal, 'index') and 'Earnings Date' in cal.index:
-                earnings_dates = [cal.loc['Earnings Date'].iloc[0]]
-            else:
-                continue
-                
+            
+            # 新版yfinance返回字典格式
+            earnings_dates = []
+            if isinstance(cal, dict):
+                if 'Earnings Date' in cal:
+                    ed = cal['Earnings Date']
+                    if isinstance(ed, list):
+                        earnings_dates = ed
+                    else:
+                        earnings_dates = [ed]
+            
             for ed in earnings_dates:
-                ed_date = pd.Timestamp(ed).date() if hasattr(ed, 'date') else ed
+                ed_date = ed.date() if hasattr(ed, 'date') else ed
                 days_until = (ed_date - today).days
                 
                 if 0 <= days_until <= 7:
