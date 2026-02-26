@@ -91,6 +91,9 @@ import sys
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "news"
     
+    # 强制发送测试消息
+    send_telegram("✅ 机器人运行正常！正在监控：" + ", ".join(WATCHLIST))
+    
     if mode == "earnings":
         check_earnings()
     else:
