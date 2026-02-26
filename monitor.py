@@ -7,7 +7,104 @@ TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 FMP_KEY = os.environ["FMP_API_KEY"]
 
-WATCHLIST = ["AAPL", "TSLA", "NVDA", "MSFT", "AMZN"]
+WATCHLIST = [
+    # 美股七巨头
+    "AAPL",   # Apple
+    "MSFT",   # Microsoft
+    "NVDA",   # NVIDIA
+    "AMZN",   # Amazon
+    "GOOGL",  # Google
+    "META",   # Meta
+    "TSLA",   # Tesla
+
+    # AI芯片/硬件
+    "AMD",    # AMD
+    "INTC",   # Intel
+    "QCOM",   # Qualcomm
+    "ARM",    # ARM Holdings
+    "AVGO",   # Broadcom
+    "MRVL",   # Marvell Technology
+
+    # AI软件/云平台
+    "CRM",    # Salesforce
+    "NOW",    # ServiceNow
+    "PLTR",   # Palantir
+    "AI",     # C3.ai
+    "BBAI",   # BigBear.ai
+    "SOUN",   # SoundHound
+    "RXRX",   # Recursion
+
+    # AI基础设施/服务器
+    "SMCI",   # Super Micro Computer
+    "DELL",   # Dell
+    "HPE",    # HP Enterprise
+    "NET",    # Cloudflare
+    "SNOW",   # Snowflake
+
+    # 电力/能源基础设施
+    "VST",    # Vistra Energy
+    "CEG",    # Constellation Energy
+    "NRG",    # NRG Energy
+    "ETR",    # Entergy
+    "AEE",    # Ameren
+    "GEV",    # GE Vernova
+    "PWR",    # Quanta Services
+    "BE",     # Bloom Energy
+    "OKLO",   # Oklo (核能)
+
+    # 储能
+    "EOSE",   # Eos Energy
+
+   # 光互联/光纤
+    "COHR",   # Coherent
+    "LITE",   # Lumentum
+    "VIAV",   # Viavi Solutions
+    "AAOI",   # Applied Optoelectronics
+    "GLW",    # Corning
+
+    # 网络安全
+    "CRWD",   # CrowdStrike
+    "PANW",   # Palo Alto Networks
+    "ZS",     # Zscaler
+    "FTNT",   # Fortinet
+    "S",      # SentinelOne
+    "CYBR",   # CyberArk
+    "OKTA",   # Okta
+
+    # 数据中心冷却
+    "VRT",    # Vertiv
+    "JCI",    # Johnson Controls
+    "TT",     # Trane Technologies
+
+    # 网络/通信基础设施
+    "CSCO",   # Cisco
+    "ANET",   # Arista Networks
+    "CIEN",   # Ciena
+
+    # 半导体设备/代工
+    "ASML",   # ASML
+    "TSM",    # Taiwan Semiconductor
+
+    # 储存
+    "SNDK",   # SanDisk
+    "MU",     # Micron Technology
+    "STX",    # Seagate
+
+    # AI应用
+    "ADBE",   # Adobe
+    "ORCL",   # Oracle
+    "APP",    # AppLovin
+    "TEM",    # Tempus AI
+    "PATH",   # UiPath
+    "DUOL",   # Duolingo
+    "SHOP",   # Shopify
+    "IBM",    # IBM
+    "CRCL",   # Circle
+
+    # AI算力/挖矿
+    "IREN",   # Iris Energy
+
+]
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
