@@ -24,7 +24,7 @@ jobs:
     - name: Run earnings check (每天早上9点)
       if: github.event.schedule == '0 13 * * 1-5' || github.event_name == 'workflow_dispatch'
       env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: python monitor.py earnings
@@ -32,7 +32,7 @@ jobs:
     - name: Run news check (每30分钟)
       if: github.event.schedule == '*/30 13-21 * * 1-5' || github.event_name == 'workflow_dispatch'
       env:
-        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
       run: python monitor.py news
