@@ -48,7 +48,6 @@ WATCHLIST = [
     "ETR",    # Entergy
     "AEE",    # Ameren
     "GEV",    # GE Vernova
-    "PWR",    # Quanta Services
     "BE",     # Bloom Energy
     "OKLO",   # Oklo (核能)
 
@@ -65,21 +64,13 @@ WATCHLIST = [
     # 网络安全
     "CRWD",   # CrowdStrike
     "PANW",   # Palo Alto Networks
-    "ZS",     # Zscaler
-    "FTNT",   # Fortinet
-    "S",      # SentinelOne
-    "CYBR",   # CyberArk
-    "OKTA",   # Okta
 
     # 数据中心冷却
     "VRT",    # Vertiv
-    "JCI",    # Johnson Controls
-    "TT",     # Trane Technologies
 
     # 网络/通信基础设施
     "CSCO",   # Cisco
     "ANET",   # Arista Networks
-    "CIEN",   # Ciena
 
     # 半导体设备/代工
     "ASML",   # ASML
@@ -88,17 +79,14 @@ WATCHLIST = [
     # 储存
     "SNDK",   # SanDisk
     "MU",     # Micron Technology
-    "STX",    # Seagate
 
     # AI应用
-    "ADBE",   # Adobe
     "ORCL",   # Oracle
     "APP",    # AppLovin
     "TEM",    # Tempus AI
     "PATH",   # UiPath
     "DUOL",   # Duolingo
     "SHOP",   # Shopify
-    "IBM",    # IBM
     "CRCL",   # Circle
 
     # AI算力/挖矿
@@ -152,36 +140,29 @@ def check_earnings():
         print(f"财报检查失败: {e}")
 
 def check_news():
-    """每30分钟检查一次新闻"""
-    for symbol in WATCHLIST:
-        try:
-            url = f"https://financialmodelingprep.com/api/v3/stock_news"
-            params = {
-                "tickers": symbol,
-                "limit": 5,
-                "apikey": FMP_KEY
-            }
-            news = requests.get(url, params=params).json()
-            
-            # 只看30分钟内的新闻
-            cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
-            recent = []
-            
-            for n in news:
-                pub = datetime.datetime.strptime(
-                    n["publishedDate"], "%Y-%m-%d %H:%M:%S"
-                )
-                if pub > cutoff:
-                    recent.append(n)
-            
-            if recent:
-                lines = [f"• <a href='{n['url']}'>{n['title']}</a>" for n in recent[:3]]
+    try:
+        tickers = ",".join(WATCHLIST)
+        url = f"https://financialmodelingprep.com/api/v3/stock_news"
+        params = {
+            "tickers": tickers,
+            "limit": 100,
+            "apikey": FMP_KEY
+        }
+        news = requests.get(url, params=params).json()
+        
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
+        
+        for n in news:
+            pub = datetime.datetime.strptime(n["publishedDate"], "%Y-%m-%d %H:%M:%S")
+            if pub > cutoff:
+                symbol = n["symbol"]
                 send_telegram(
-                    f"📰 <b>{symbol}</b> 最新新闻：\n" + "\n".join(lines)
+                    f"📰 <b>{symbol}</b>\n"
+                    f"<a href='{n['url']}'>{n['title']}</a>\n"
+                    f"🕐 {n['publishedDate']}"
                 )
-                    
-        except Exception as e:
-            print(f"新闻检查失败 {symbol}: {e}")
+    except Exception as e:
+        print(f"新闻检查失败: {e}")
 
 import sys
 
