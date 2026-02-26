@@ -1,16 +1,13 @@
 import os
-import json
-import datetime
 import requests
-import yfinance as yf
-from datetime import date, timedelta
+import datetime
+from datetime import date
 
-TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+FMP_KEY = os.environ["FMP_API_KEY"]
 
-# ========== 在这里设置你关注的股票 ==========
 WATCHLIST = ["AAPL", "TSLA", "NVDA", "MSFT", "AMZN"]
-# =============================================
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -21,88 +18,80 @@ def send_telegram(message):
     })
 
 def check_earnings():
-    alerts = []
+    """每天早上推送未来7天财报"""
     today = date.today()
+    end = today + datetime.timedelta(days=7)
     
-    for symbol in WATCHLIST:
-        try:
-            ticker = yf.Ticker(symbol)
-            cal = ticker.calendar
-            
-            if not cal:
-                continue
-            
-            # 新版yfinance返回字典格式
-            earnings_dates = []
-            if isinstance(cal, dict):
-                if 'Earnings Date' in cal:
-                    ed = cal['Earnings Date']
-                    if isinstance(ed, list):
-                        earnings_dates = ed
-                    else:
-                        earnings_dates = [ed]
-            
-            for ed in earnings_dates:
-                ed_date = ed.date() if hasattr(ed, 'date') else ed
-                days_until = (ed_date - today).days
-                
-                if 0 <= days_until <= 7:
-                    alerts.append(
-                        f"📊 <b>{symbol}</b> 财报即将发布！\n"
-                        f"📅 日期：{ed_date}\n"
-                        f"⏰ 还有 {days_until} 天"
-                    )
-        except Exception as e:
-            print(f"Error checking earnings for {symbol}: {e}")
+    url = f"https://financialmodelingprep.com/api/v3/earning_calendar"
+    params = {
+        "from": today.strftime("%Y-%m-%d"),
+        "to": end.strftime("%Y-%m-%d"),
+        "apikey": FMP_KEY
+    }
     
-    return alerts
-
-def check_news():
-    alerts = []
-    
-    for symbol in WATCHLIST:
-        try:
-            ticker = yf.Ticker(symbol)
-            news = ticker.news
-            
-            if not news:
-                continue
-            
-            # 只看6小时内的新闻
-            cutoff = datetime.datetime.now().timestamp() - 6 * 3600
-            recent = [n for n in news if n.get('providerPublishTime', 0) > cutoff]
-            
-            if recent:
-                news_lines = []
-                for n in recent[:3]:  # 最多3条
-                    title = n.get('title', '')
-                    link = n.get('link', '')
-                    news_lines.append(f"• <a href='{link}'>{title}</a>")
+    try:
+        res = requests.get(url, params=params).json()
+        alerts = []
+        
+        for item in res:
+            if item.get("symbol") in WATCHLIST:
+                symbol = item["symbol"]
+                ed = item["date"]
+                eps_est = item.get("epsEstimated", "N/A")
                 
                 alerts.append(
-                    f"📰 <b>{symbol}</b> 最新新闻：\n" + "\n".join(news_lines)
+                    f"📊 <b>{symbol}</b> 财报预告\n"
+                    f"📅 日期：{ed}\n"
+                    f"📈 EPS预期：{eps_est}"
                 )
-        except Exception as e:
-            print(f"Error checking news for {symbol}: {e}")
-    
-    return alerts
+        
+        if alerts:
+            header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
+            send_telegram(header + "\n\n".join(alerts))
+        else:
+            print("未来7天无财报")
+            
+    except Exception as e:
+        print(f"财报检查失败: {e}")
 
-def main():
-    print(f"开始监控 {date.today()}...")
-    all_alerts = []
-    
-    earnings_alerts = check_earnings()
-    news_alerts = check_news()
-    
-    all_alerts = earnings_alerts + news_alerts
-    
-    if all_alerts:
-        for alert in all_alerts:
-            send_telegram(alert)
-            print(f"已发送: {alert[:50]}...")
-    else:
-        print("暂无新提醒")
+def check_news():
+    """每30分钟检查一次新闻"""
+    for symbol in WATCHLIST:
+        try:
+            url = f"https://financialmodelingprep.com/api/v3/stock_news"
+            params = {
+                "tickers": symbol,
+                "limit": 5,
+                "apikey": FMP_KEY
+            }
+            news = requests.get(url, params=params).json()
+            
+            # 只看30分钟内的新闻
+            cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
+            recent = []
+            
+            for n in news:
+                pub = datetime.datetime.strptime(
+                    n["publishedDate"], "%Y-%m-%d %H:%M:%S"
+                )
+                if pub > cutoff:
+                    recent.append(n)
+            
+            if recent:
+                lines = [f"• <a href='{n['url']}'>{n['title']}</a>" for n in recent[:3]]
+                send_telegram(
+                    f"📰 <b>{symbol}</b> 最新新闻：\n" + "\n".join(lines)
+                )
+                    
+        except Exception as e:
+            print(f"新闻检查失败 {symbol}: {e}")
+
+import sys
 
 if __name__ == "__main__":
-    import pandas as pd
-    main()
+    mode = sys.argv[1] if len(sys.argv) > 1 else "news"
+    
+    if mode == "earnings":
+        check_earnings()
+    else:
+        check_news()
