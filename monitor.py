@@ -196,7 +196,7 @@ def check_private_companies():
     try:
         import xml.etree.ElementTree as ET
         
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
         
         for company in PRIVATE_COMPANIES:
             query = company.replace(" ", "+")
