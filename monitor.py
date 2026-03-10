@@ -148,7 +148,17 @@ def check_news():
             "limit": 100,
             "apikey": FMP_KEY
         }
-        news = requests.get(url, params=params).json()
+        response = requests.get(url, params=params)
+        news = response.json()
+        
+        # 调试：打印API返回内容
+        print(f"API返回类型: {type(news)}")
+        print(f"API返回内容: {str(news)[:500]}")
+        
+        if isinstance(news, dict):
+            print(f"API错误信息: {news}")
+            send_telegram(f"⚠️ FMP API错误：{str(news)[:200]}")
+            return
         
         cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
@@ -161,8 +171,10 @@ def check_news():
                     f"<a href='{n['url']}'>{n['title']}</a>\n"
                     f"🕐 {n['publishedDate']}"
                 )
+                
     except Exception as e:
         print(f"新闻检查失败: {e}")
+        send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
 
 import sys
 
