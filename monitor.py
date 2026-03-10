@@ -153,6 +153,7 @@ def check_news():
             
             root = ET.fromstring(response.content)
             items = root.findall('./channel/item')
+            print(f"{symbol}: 抓到 {len(items)} 条新闻")
             
             for item in items:
                 pub_str = item.findtext('pubDate', '')
@@ -203,6 +204,7 @@ def check_private_companies():
             
             root = ET.fromstring(response.content)
             items = root.findall('./channel/item')
+            print(f"{company}: 抓到 {len(items)} 条新闻")
             
             for item in items[:5]:  # 每家公司最多5条
                 pub_str = item.findtext('pubDate', '')
