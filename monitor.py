@@ -145,12 +145,13 @@ def check_news():
         cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
         for symbol in WATCHLIST:
-            url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
-            response = requests.get(url, timeout=10)
+            url = f"https://finviz.com/rss.ashx?t={symbol}"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=10)
             
             if response.status_code != 200:
                 continue
-                
+            
             root = ET.fromstring(response.content)
             items = root.findall('./channel/item')
             
@@ -158,6 +159,7 @@ def check_news():
                 pub_str = item.findtext('pubDate', '')
                 title = item.findtext('title', '')
                 link = item.findtext('link', '')
+                source = item.findtext('source', '')
                 
                 try:
                     pub = datetime.datetime.strptime(
@@ -168,7 +170,7 @@ def check_news():
                 
                 if pub > cutoff:
                     send_telegram(
-                        f"📰 <b>{symbol}</b>\n"
+                        f"📰 <b>{symbol}</b> | {source}\n"
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
                     )
