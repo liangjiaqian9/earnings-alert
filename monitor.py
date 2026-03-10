@@ -103,75 +103,76 @@ def send_telegram(message):
     })
 
 def check_earnings():
-    """每天早上推送未来7天财报"""
+    import yfinance as yf
     today = date.today()
-    end = today + datetime.timedelta(days=7)
+    alerts = []
     
-    url = f"https://financialmodelingprep.com/api/v3/earning_calendar"
-    params = {
-        "from": today.strftime("%Y-%m-%d"),
-        "to": end.strftime("%Y-%m-%d"),
-        "apikey": FMP_KEY
-    }
-    
-    try:
-        res = requests.get(url, params=params).json()
-        alerts = []
-        
-        for item in res:
-            if item.get("symbol") in WATCHLIST:
-                symbol = item["symbol"]
-                ed = item["date"]
-                eps_est = item.get("epsEstimated", "N/A")
-                
-                alerts.append(
-                    f"📊 <b>{symbol}</b> 财报预告\n"
-                    f"📅 日期：{ed}\n"
-                    f"📈 EPS预期：{eps_est}"
-                )
-        
-        if alerts:
-            header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
-            send_telegram(header + "\n\n".join(alerts))
-        else:
-            print("未来7天无财报")
+    for symbol in WATCHLIST:
+        try:
+            ticker = yf.Ticker(symbol)
+            cal = ticker.calendar
             
-    except Exception as e:
-        print(f"财报检查失败: {e}")
+            if not cal or not isinstance(cal, dict):
+                continue
+            
+            earnings_dates = cal.get('Earnings Date', [])
+            if not isinstance(earnings_dates, list):
+                earnings_dates = [earnings_dates]
+            
+            for ed in earnings_dates:
+                ed_date = ed.date() if hasattr(ed, 'date') else ed
+                days_until = (ed_date - today).days
+                
+                if 0 <= days_until <= 7:
+                    alerts.append(
+                        f"📊 <b>{symbol}</b> 财报即将发布！\n"
+                        f"📅 日期：{ed_date}\n"
+                        f"⏰ 还有 {days_until} 天"
+                    )
+        except Exception as e:
+            print(f"财报检查失败 {symbol}: {e}")
+    
+    if alerts:
+        header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
+        send_telegram(header + "\n\n".join(alerts))
+    else:
+        print("未来7天无财报")
 
 def check_news():
     try:
-        tickers = ",".join(WATCHLIST)
-        url = f"https://financialmodelingprep.com/api/v3/stock_news"
-        params = {
-            "tickers": tickers,
-            "limit": 100,
-            "apikey": FMP_KEY
-        }
-        response = requests.get(url, params=params)
-        news = response.json()
-        
-        # 调试：打印API返回内容
-        print(f"API返回类型: {type(news)}")
-        print(f"API返回内容: {str(news)[:500]}")
-        
-        if isinstance(news, dict):
-            print(f"API错误信息: {news}")
-            send_telegram(f"⚠️ FMP API错误：{str(news)[:200]}")
-            return
+        import xml.etree.ElementTree as ET
         
         cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
-        for n in news:
-            pub = datetime.datetime.strptime(n["publishedDate"], "%Y-%m-%d %H:%M:%S")
-            if pub > cutoff:
-                symbol = n["symbol"]
-                send_telegram(
-                    f"📰 <b>{symbol}</b>\n"
-                    f"<a href='{n['url']}'>{n['title']}</a>\n"
-                    f"🕐 {n['publishedDate']}"
-                )
+        for symbol in WATCHLIST:
+            url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={symbol}&region=US&lang=en-US"
+            response = requests.get(url, timeout=10)
+            
+            if response.status_code != 200:
+                continue
                 
+            root = ET.fromstring(response.content)
+            items = root.findall('./channel/item')
+            
+            for item in items:
+                pub_str = item.findtext('pubDate', '')
+                title = item.findtext('title', '')
+                link = item.findtext('link', '')
+                
+                try:
+                    pub = datetime.datetime.strptime(
+                        pub_str, "%a, %d %b %Y %H:%M:%S %z"
+                    ).replace(tzinfo=None)
+                except:
+                    continue
+                
+                if pub > cutoff:
+                    send_telegram(
+                        f"📰 <b>{symbol}</b>\n"
+                        f"<a href='{link}'>{title}</a>\n"
+                        f"🕐 {pub_str}"
+                    )
+                    
     except Exception as e:
         print(f"新闻检查失败: {e}")
         send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
