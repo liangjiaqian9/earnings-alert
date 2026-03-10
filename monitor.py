@@ -144,22 +144,23 @@ def check_news():
         cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
         for symbol in WATCHLIST:
-            url = f"https://finviz.com/rss.ashx?t={symbol}"
+            query = symbol.replace(" ", "+")
+            url = f"https://news.google.com/rss/search?q={query}+stock&hl=en-US&gl=US&ceid=US:en"
             headers = {"User-Agent": "Mozilla/5.0"}
             response = requests.get(url, headers=headers, timeout=10)
             
             if response.status_code != 200:
+                print(f"{symbol}: 请求失败 {response.status_code}")
                 continue
             
             root = ET.fromstring(response.content)
             items = root.findall('./channel/item')
             print(f"{symbol}: 抓到 {len(items)} 条新闻")
             
-            for item in items:
+            for item in items[:5]:
                 pub_str = item.findtext('pubDate', '')
                 title = item.findtext('title', '')
                 link = item.findtext('link', '')
-                source = item.findtext('source', '')
                 
                 try:
                     pub = datetime.datetime.strptime(
@@ -170,10 +171,14 @@ def check_news():
                 
                 if pub > cutoff:
                     send_telegram(
-                        f"📰 <b>{symbol}</b> | {source}\n"
+                        f"📰 <b>{symbol}</b>\n"
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
                     )
+                    
+    except Exception as e:
+        print(f"新闻检查失败: {e}")
+        send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
                     
     except Exception as e:
         print(f"新闻检查失败: {e}")
