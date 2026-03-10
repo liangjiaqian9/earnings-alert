@@ -5,7 +5,6 @@ from datetime import date
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
-FMP_KEY = os.environ["FMP_API_KEY"]
 
 WATCHLIST = [
     # 美股七巨头
