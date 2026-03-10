@@ -141,7 +141,7 @@ def check_news():
     try:
         import xml.etree.ElementTree as ET
         
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
         
         for symbol in WATCHLIST:
             query = symbol.replace(" ", "+")
