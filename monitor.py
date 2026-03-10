@@ -179,6 +179,54 @@ def check_news():
         print(f"新闻检查失败: {e}")
         send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
 
+PRIVATE_COMPANIES = [
+    "OpenAI",
+    "Anthropic",
+    "SpaceX",
+    "Stripe",
+    "Databricks",
+]
+
+def check_private_companies():
+    try:
+        import xml.etree.ElementTree as ET
+        
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
+        
+        for company in PRIVATE_COMPANIES:
+            query = company.replace(" ", "+")
+            url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code != 200:
+                continue
+            
+            root = ET.fromstring(response.content)
+            items = root.findall('./channel/item')
+            
+            for item in items[:5]:  # 每家公司最多5条
+                pub_str = item.findtext('pubDate', '')
+                title = item.findtext('title', '')
+                link = item.findtext('link', '')
+                
+                try:
+                    pub = datetime.datetime.strptime(
+                        pub_str, "%a, %d %b %Y %H:%M:%S %z"
+                    ).replace(tzinfo=None)
+                except:
+                    continue
+                
+                if pub > cutoff:
+                    send_telegram(
+                        f"🏢 <b>{company}</b>\n"
+                        f"<a href='{link}'>{title}</a>\n"
+                        f"🕐 {pub_str}"
+                    )
+                    
+    except Exception as e:
+        print(f"私有公司新闻检查失败: {e}")
+
 import sys
 
 if __name__ == "__main__":
@@ -188,3 +236,4 @@ if __name__ == "__main__":
         check_earnings()
     else:
         check_news()
+        check_private_companies() 
