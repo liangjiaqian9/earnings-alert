@@ -141,7 +141,7 @@ def check_news():
     try:
         import xml.etree.ElementTree as ET
         
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
         for symbol in WATCHLIST:
             query = symbol.replace(" ", "+")
@@ -170,13 +170,16 @@ def check_news():
                 except Exception:
                     continue
                 
+                TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
+                
                 if pub > cutoff:
+                    if not any(source in title or source in link for source in TRUSTED_SOURCES):
+                        continue
                     send_telegram(
                         f"📰 <b>{symbol}</b>\n"
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
                     )
-                    
     except Exception as e:
         print(f"新闻检查失败: {e}")
         send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
@@ -193,7 +196,7 @@ def check_private_companies():
     try:
         import xml.etree.ElementTree as ET
         
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
         
         for company in PRIVATE_COMPANIES:
             query = company.replace(" ", "+")
@@ -221,7 +224,11 @@ def check_private_companies():
                 except Exception:
                     continue
                 
+                TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
+                
                 if pub > cutoff:
+                    if not any(source in title or source in link for source in TRUSTED_SOURCES):
+                        continue
                     send_telegram(
                         f"🏢 <b>{company}</b>\n"
                         f"<a href='{link}'>{title}</a>\n"
