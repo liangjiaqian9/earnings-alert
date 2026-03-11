@@ -172,13 +172,37 @@ def check_news():
                 
                 TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
                 
+                BREAKING_KEYWORDS = [
+                    # 公司重大事件
+                    'acquires', 'acquisition', 'merger', 'acquired', 'buys',
+                    'bankruptcy', 'layoffs', 'CEO', 'resigns', 'fired', 'appointed',
+                    'recall', 'investigation', 'lawsuit', 'SEC', 'fine', 'penalty',
+                    'partnership', 'deal', 'contract', 'agreement',
+                    'earnings', 'revenue', 'profit', 'loss', 'beat', 'miss',
+                    'guidance', 'forecast', 'outlook',
+                    
+                    # 宏观/市场
+                    'Fed', 'interest rate', 'inflation', 'recession', 'tariff',
+                    'sanctions', 'ban', 'war', 'attack', 'crisis',
+                    'data center', 'AI', 'chip', 'export control',
+                    
+                    # 价格异动
+                    'surges', 'plunges', 'halted', 'suspended', 'crash',
+                    'all-time high', 'all-time low', 'record',
+                ]
+                
                 if pub > cutoff:
-                    if not any(source in title or source in link for source in TRUSTED_SOURCES):
+                    from_trusted = any(source in title or source in link for source in TRUSTED_SOURCES)
+                    is_breaking = any(kw.lower() in title.lower() for kw in BREAKING_KEYWORDS)
+                    
+                    if not (from_trusted and is_breaking):
                         continue
+                        
                     send_telegram(
                         f"📰 <b>{symbol}</b>\n"
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
+                    )
                     )
     except Exception as e:
         print(f"新闻检查失败: {e}")
@@ -226,11 +250,34 @@ def check_private_companies():
                 
                 TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
                 
+                BREAKING_KEYWORDS = [
+                    # 公司重大事件
+                    'acquires', 'acquisition', 'merger', 'acquired', 'buys',
+                    'bankruptcy', 'layoffs', 'CEO', 'resigns', 'fired', 'appointed',
+                    'recall', 'investigation', 'lawsuit', 'SEC', 'fine', 'penalty',
+                    'partnership', 'deal', 'contract', 'agreement',
+                    'earnings', 'revenue', 'profit', 'loss', 'beat', 'miss',
+                    'guidance', 'forecast', 'outlook',
+                    
+                    # 宏观/市场
+                    'Fed', 'interest rate', 'inflation', 'recession', 'tariff',
+                    'sanctions', 'ban', 'war', 'attack', 'crisis',
+                    'data center', 'AI', 'chip', 'export control',
+                    
+                    # 价格异动
+                    'surges', 'plunges', 'halted', 'suspended', 'crash',
+                    'all-time high', 'all-time low', 'record',
+                ]
+                
                 if pub > cutoff:
-                    if not any(source in title or source in link for source in TRUSTED_SOURCES):
+                    from_trusted = any(source in title or source in link for source in TRUSTED_SOURCES)
+                    is_breaking = any(kw.lower() in title.lower() for kw in BREAKING_KEYWORDS)
+                    
+                    if not (from_trusted and is_breaking):
                         continue
+                        
                     send_telegram(
-                        f"🏢 <b>{company}</b>\n"
+                        f"📰 <b>{symbol}</b>\n"
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
                     )
