@@ -157,19 +157,25 @@ def check_news():
             items = root.findall('./channel/item')
             print(f"{symbol}: 抓到 {len(items)} 条新闻")
             
-            for item in items[:2]:  # 只看前2条
+            for item in items[:5]:
                 pub_str = item.findtext('pubDate', '')
                 title = item.findtext('title', '')
-                print(f"标题: {title[:50]}")
-                print(f"时间字符串: {pub_str}")
+                link = item.findtext('link', '')
                 
                 try:
-    pub_str_clean = pub_str.replace("GMT", "+0000")
-    pub = datetime.datetime.strptime(
-        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
-    ).replace(tzinfo=None)
-except:
-    continue
+                    pub_str_clean = pub_str.replace("GMT", "+0000")
+                    pub = datetime.datetime.strptime(
+                        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
+                    ).replace(tzinfo=None)
+                except Exception:
+                    continue
+                
+                if pub > cutoff:
+                    send_telegram(
+                        f"📰 <b>{symbol}</b>\n"
+                        f"<a href='{link}'>{title}</a>\n"
+                        f"🕐 {pub_str}"
+                    )
                     
     except Exception as e:
         print(f"新闻检查失败: {e}")
@@ -202,18 +208,18 @@ def check_private_companies():
             items = root.findall('./channel/item')
             print(f"{company}: 抓到 {len(items)} 条新闻")
             
-            for item in items[:5]:  # 每家公司最多5条
+            for item in items[:5]:
                 pub_str = item.findtext('pubDate', '')
                 title = item.findtext('title', '')
                 link = item.findtext('link', '')
                 
                 try:
-    pub_str_clean = pub_str.replace("GMT", "+0000")
-    pub = datetime.datetime.strptime(
-        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
-    ).replace(tzinfo=None)
-except:
-    continue
+                    pub_str_clean = pub_str.replace("GMT", "+0000")
+                    pub = datetime.datetime.strptime(
+                        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
+                    ).replace(tzinfo=None)
+                except Exception:
+                    continue
                 
                 if pub > cutoff:
                     send_telegram(
