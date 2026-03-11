@@ -157,28 +157,22 @@ def check_news():
             items = root.findall('./channel/item')
             print(f"{symbol}: 抓到 {len(items)} 条新闻")
             
-            for item in items[:5]:
+            for item in items[:2]:  # 只看前2条
                 pub_str = item.findtext('pubDate', '')
                 title = item.findtext('title', '')
-                link = item.findtext('link', '')
+                print(f"标题: {title[:50]}")
+                print(f"时间字符串: {pub_str}")
                 
                 try:
                     pub = datetime.datetime.strptime(
                         pub_str, "%a, %d %b %Y %H:%M:%S %z"
                     ).replace(tzinfo=None)
-                except:
+                    print(f"解析后时间: {pub}")
+                    print(f"cutoff时间: {cutoff}")
+                    print(f"是否在范围内: {pub > cutoff}")
+                except Exception as parse_err:
+                    print(f"时间解析失败: {parse_err}, 原始: {pub_str}")
                     continue
-                
-                if pub > cutoff:
-                    send_telegram(
-                        f"📰 <b>{symbol}</b>\n"
-                        f"<a href='{link}'>{title}</a>\n"
-                        f"🕐 {pub_str}"
-                    )
-                    
-    except Exception as e:
-        print(f"新闻检查失败: {e}")
-        send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
                     
     except Exception as e:
         print(f"新闻检查失败: {e}")
