@@ -203,7 +203,6 @@ def check_news():
                         f"<a href='{link}'>{title}</a>\n"
                         f"🕐 {pub_str}"
                     )
-                    )
     except Exception as e:
         print(f"新闻检查失败: {e}")
         send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
