@@ -164,15 +164,12 @@ def check_news():
                 print(f"时间字符串: {pub_str}")
                 
                 try:
-                    pub = datetime.datetime.strptime(
-                        pub_str, "%a, %d %b %Y %H:%M:%S %z"
-                    ).replace(tzinfo=None)
-                    print(f"解析后时间: {pub}")
-                    print(f"cutoff时间: {cutoff}")
-                    print(f"是否在范围内: {pub > cutoff}")
-                except Exception as parse_err:
-                    print(f"时间解析失败: {parse_err}, 原始: {pub_str}")
-                    continue
+    pub_str_clean = pub_str.replace("GMT", "+0000")
+    pub = datetime.datetime.strptime(
+        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
+    ).replace(tzinfo=None)
+except:
+    continue
                     
     except Exception as e:
         print(f"新闻检查失败: {e}")
@@ -211,11 +208,12 @@ def check_private_companies():
                 link = item.findtext('link', '')
                 
                 try:
-                    pub = datetime.datetime.strptime(
-                        pub_str, "%a, %d %b %Y %H:%M:%S %z"
-                    ).replace(tzinfo=None)
-                except:
-                    continue
+    pub_str_clean = pub_str.replace("GMT", "+0000")
+    pub = datetime.datetime.strptime(
+        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
+    ).replace(tzinfo=None)
+except:
+    continue
                 
                 if pub > cutoff:
                     send_telegram(
