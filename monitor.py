@@ -2,96 +2,10 @@ import os
 import requests
 import datetime
 from datetime import date
+import re
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
-
-WATCHLIST = [
-    # 美股七巨头
-    "AAPL",   # Apple
-    "MSFT",   # Microsoft
-    "NVDA",   # NVIDIA
-    "AMZN",   # Amazon
-    "GOOGL",  # Google
-    "META",   # Meta
-    "TSLA",   # Tesla
-
-    # AI芯片/硬件
-    "AMD",    # AMD
-    "INTC",   # Intel
-    "QCOM",   # Qualcomm
-    "ARM",    # ARM Holdings
-    "AVGO",   # Broadcom
-    "MRVL",   # Marvell Technology
-
-    # AI软件/云平台
-    "CRM",    # Salesforce
-    "NOW",    # ServiceNow
-    "PLTR",   # Palantir
-    "AI",     # C3.ai
-    "BBAI",   # BigBear.ai
-    "SOUN",   # SoundHound
-    "RXRX",   # Recursion
-
-    # AI基础设施/服务器
-    "SMCI",   # Super Micro Computer
-    "DELL",   # Dell
-    "HPE",    # HP Enterprise
-    "NET",    # Cloudflare
-    "SNOW",   # Snowflake
-
-    # 电力/能源基础设施
-    "VST",    # Vistra Energy
-    "CEG",    # Constellation Energy
-    "NRG",    # NRG Energy
-    "ETR",    # Entergy
-    "AEE",    # Ameren
-    "GEV",    # GE Vernova
-    "BE",     # Bloom Energy
-    "OKLO",   # Oklo (核能)
-
-    # 储能
-    "EOSE",   # Eos Energy
-
-   # 光互联/光纤
-    "COHR",   # Coherent
-    "LITE",   # Lumentum
-    "VIAV",   # Viavi Solutions
-    "AAOI",   # Applied Optoelectronics
-    "GLW",    # Corning
-
-    # 网络安全
-    "CRWD",   # CrowdStrike
-    "PANW",   # Palo Alto Networks
-
-    # 数据中心冷却
-    "VRT",    # Vertiv
-
-    # 网络/通信基础设施
-    "CSCO",   # Cisco
-    "ANET",   # Arista Networks
-
-    # 半导体设备/代工
-    "ASML",   # ASML
-    "TSM",    # Taiwan Semiconductor
-
-    # 储存
-    "SNDK",   # SanDisk
-    "MU",     # Micron Technology
-
-    # AI应用
-    "ORCL",   # Oracle
-    "APP",    # AppLovin
-    "TEM",    # Tempus AI
-    "PATH",   # UiPath
-    "DUOL",   # Duolingo
-    "SHOP",   # Shopify
-    "CRCL",   # Circle
-
-    # AI算力/挖矿
-    "IREN",   # Iris Energy
-
-]
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -101,27 +15,86 @@ def send_telegram(message):
         "parse_mode": "HTML"
     })
 
+def get_sp500():
+    try:
+        url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        tickers = re.findall(r'<td><a href="/wiki/[^"]*" title="[^"]*">([A-Z.]{1,5})</a></td>', response.text)
+        return list(set(tickers))
+    except Exception as e:
+        print(f"获取S&P500列表失败: {e}")
+        return []
+
+EXTRA_WATCHLIST = [
+    # 美股七巨头
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    # AI芯片/硬件
+    "AMD", "INTC", "QCOM", "ARM", "AVGO", "MRVL",
+    # AI软件/云平台
+    "CRM", "NOW", "PLTR", "AI", "BBAI", "SOUN", "RXRX",
+    # AI基础设施/服务器
+    "SMCI", "DELL", "HPE", "NET", "SNOW",
+    # 电力/能源基础设施
+    "VST", "CEG", "NRG", "ETR", "AEE", "GEV", "BE", "OKLO",
+    # 储能
+    "EOSE",
+    # 光互联/光纤
+    "COHR", "LITE", "VIAV", "AAOI", "GLW",
+    # 网络安全
+    "CRWD", "PANW",
+    # 数据中心冷却
+    "VRT",
+    # 网络/通信基础设施
+    "CSCO", "ANET",
+    # 半导体设备/代工
+    "ASML", "TSM",
+    # 储存
+    "SNDK", "MU",
+    # AI应用
+    "ORCL", "APP", "TEM", "PATH", "DUOL", "SHOP", "CRCL",
+    # AI算力/挖矿
+    "IREN",
+    # 手术机器人/医疗
+    "ISRG",
+    # 其他高成长
+    "MELI", "TTD", "WDAY",
+    # 新增
+    "OSS", "POET", "NOVT", "TMDX", "ZBRA",
+    "SEDG",   # SolarEdge Technologies
+    "PI",     # Impinj
+    "BWXT",   # BWX Technologies
+    "GCT",    # GigaCloud Technology
+    "HIMX",   # Himax Technologies
+]
+
+def get_watchlist():
+    sp500 = get_sp500()
+    combined = list(set(sp500 + EXTRA_WATCHLIST))
+    print(f"总监控股票数: {len(combined)}")
+    return combined
+
 def check_earnings():
-    import yfinance as yf
     today = date.today()
     alerts = []
-    
+    WATCHLIST = get_watchlist()
+
+    import yfinance as yf
     for symbol in WATCHLIST:
         try:
             ticker = yf.Ticker(symbol)
             cal = ticker.calendar
-            
+
             if not cal or not isinstance(cal, dict):
                 continue
-            
+
             earnings_dates = cal.get('Earnings Date', [])
             if not isinstance(earnings_dates, list):
                 earnings_dates = [earnings_dates]
-            
+
             for ed in earnings_dates:
                 ed_date = ed.date() if hasattr(ed, 'date') else ed
                 days_until = (ed_date - today).days
-                
+
                 if 0 <= days_until <= 7:
                     alerts.append(
                         f"📊 <b>{symbol}</b> 财报即将发布！\n"
@@ -130,167 +103,130 @@ def check_earnings():
                     )
         except Exception as e:
             print(f"财报检查失败 {symbol}: {e}")
-    
+
     if alerts:
         header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
         send_telegram(header + "\n\n".join(alerts))
     else:
         print("未来7天无财报")
 
-def check_news():
-    try:
-        import xml.etree.ElementTree as ET
-        
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
-        
-        for symbol in WATCHLIST:
-            query = symbol.replace(" ", "+")
-            url = f"https://news.google.com/rss/search?q={query}+stock&hl=en-US&gl=US&ceid=US:en"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code != 200:
-                print(f"{symbol}: 请求失败 {response.status_code}")
-                continue
-            
-            root = ET.fromstring(response.content)
-            items = root.findall('./channel/item')
-            print(f"{symbol}: 抓到 {len(items)} 条新闻")
-            
-            for item in items[:5]:
-                pub_str = item.findtext('pubDate', '')
-                title = item.findtext('title', '')
-                link = item.findtext('link', '')
-                
-                try:
-                    pub_str_clean = pub_str.replace("GMT", "+0000")
-                    pub = datetime.datetime.strptime(
-                        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
-                    ).replace(tzinfo=None)
-                except Exception:
-                    continue
-                
-                TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
-                
-                BREAKING_KEYWORDS = [
-                    # 公司重大事件
-                    'acquires', 'acquisition', 'merger', 'acquired', 'buys',
-                    'bankruptcy', 'layoffs', 'CEO', 'resigns', 'fired', 'appointed',
-                    'recall', 'investigation', 'lawsuit', 'SEC', 'fine', 'penalty',
-                    'partnership', 'deal', 'contract', 'agreement',
-                    'earnings', 'revenue', 'profit', 'loss', 'beat', 'miss',
-                    'guidance', 'forecast', 'outlook',
-                    
-                    # 宏观/市场
-                    'Fed', 'interest rate', 'inflation', 'recession', 'tariff',
-                    'sanctions', 'ban', 'war', 'attack', 'crisis',
-                    'data center', 'AI', 'chip', 'export control',
-                    
-                    # 价格异动
-                    'surges', 'plunges', 'halted', 'suspended', 'crash',
-                    'all-time high', 'all-time low', 'record',
-                ]
-                
-                if pub > cutoff:
-                    from_trusted = any(source in title or source in link for source in TRUSTED_SOURCES)
-                    is_breaking = any(kw.lower() in title.lower() for kw in BREAKING_KEYWORDS)
-                    
-                    if not (from_trusted and is_breaking):
-                        continue
-                        
-                    send_telegram(
-                        f"📰 <b>{symbol}</b>\n"
-                        f"<a href='{link}'>{title}</a>\n"
-                        f"🕐 {pub_str}"
-                    )
-    except Exception as e:
-        print(f"新闻检查失败: {e}")
-        send_telegram(f"⚠️ 新闻检查失败：{str(e)}")
+def check_witching_days():
+    today = date.today()
+    alerts = []
 
-PRIVATE_COMPANIES = [
-    "OpenAI",
-    "Anthropic",
-    "SpaceX",
-    "Stripe",
-    "Databricks",
-]
+    def get_third_friday(year, month):
+        first_day = date(year, month, 1)
+        days_until_friday = (4 - first_day.weekday()) % 7
+        first_friday = first_day + datetime.timedelta(days=days_until_friday)
+        return first_friday + datetime.timedelta(weeks=2)
 
-def check_private_companies():
+    for delta_months in range(2):
+        check_month = today.month + delta_months
+        check_year = today.year
+        if check_month > 12:
+            check_month -= 12
+            check_year += 1
+
+        third_friday = get_third_friday(check_year, check_month)
+        days_until = (third_friday - today).days
+
+        if 0 <= days_until <= 7:
+            is_quarterly = check_month in [3, 6, 9, 12]
+
+            if is_quarterly:
+                witching_type = "⚠️ <b>四巫日（Quadruple Witching）</b>"
+                desc = "股指期货、股指期权、个股期货、个股期权同时到期\n历史上市场波动极大，成交量暴增"
+            else:
+                witching_type = "⚠️ <b>月度期权到期日（Monthly Opex）</b>"
+                desc = "月度期权到期，市场可能出现异常波动"
+
+            alerts.append(
+                f"{witching_type}\n"
+                f"📅 日期：{third_friday}（{days_until}天后）\n"
+                f"📌 {desc}"
+            )
+
+    if alerts:
+        send_telegram("\n\n".join(alerts))
+    else:
+        print("未来7天无巫日")
+
+def check_economic_events():
+    today = date.today()
+    alerts = []
+
     try:
-        import xml.etree.ElementTree as ET
-        
-        cutoff = datetime.datetime.utcnow() - datetime.timedelta(minutes=35)
-        
-        for company in PRIVATE_COMPANIES:
-            query = company.replace(" ", "+")
-            url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
-            headers = {"User-Agent": "Mozilla/5.0"}
-            response = requests.get(url, headers=headers, timeout=10)
-            
-            if response.status_code != 200:
-                continue
-            
-            root = ET.fromstring(response.content)
-            items = root.findall('./channel/item')
-            print(f"{company}: 抓到 {len(items)} 条新闻")
-            
-            for item in items[:5]:
-                pub_str = item.findtext('pubDate', '')
-                title = item.findtext('title', '')
-                link = item.findtext('link', '')
-                
-                try:
-                    pub_str_clean = pub_str.replace("GMT", "+0000")
-                    pub = datetime.datetime.strptime(
-                        pub_str_clean, "%a, %d %b %Y %H:%M:%S %z"
-                    ).replace(tzinfo=None)
-                except Exception:
+        fomc_url = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+        response = requests.get(fomc_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+
+        fomc_dates = re.findall(r'(\w+ \d{1,2}(?:-\d{1,2})?),?\s*(\d{4})', response.text)
+
+        months = {
+            'January': 1, 'February': 2, 'March': 3, 'April': 4,
+            'May': 5, 'June': 6, 'July': 7, 'August': 8,
+            'September': 9, 'October': 10, 'November': 11, 'December': 12
+        }
+
+        for date_str, year in fomc_dates:
+            try:
+                parts = date_str.split()
+                if len(parts) < 2:
                     continue
-                
-                TRUSTED_SOURCES = ['Bloomberg', 'Reuters', 'CNBC', 'WSJ', 'Financial Times']
-                
-                BREAKING_KEYWORDS = [
-                    # 公司重大事件
-                    'acquires', 'acquisition', 'merger', 'acquired', 'buys',
-                    'bankruptcy', 'layoffs', 'CEO', 'resigns', 'fired', 'appointed',
-                    'recall', 'investigation', 'lawsuit', 'SEC', 'fine', 'penalty',
-                    'partnership', 'deal', 'contract', 'agreement',
-                    'earnings', 'revenue', 'profit', 'loss', 'beat', 'miss',
-                    'guidance', 'forecast', 'outlook',
-                    
-                    # 宏观/市场
-                    'Fed', 'interest rate', 'inflation', 'recession', 'tariff',
-                    'sanctions', 'ban', 'war', 'attack', 'crisis',
-                    'data center', 'AI', 'chip', 'export control',
-                    
-                    # 价格异动
-                    'surges', 'plunges', 'halted', 'suspended', 'crash',
-                    'all-time high', 'all-time low', 'record',
-                ]
-                
-                if pub > cutoff:
-                    from_trusted = any(source in title or source in link for source in TRUSTED_SOURCES)
-                    is_breaking = any(kw.lower() in title.lower() for kw in BREAKING_KEYWORDS)
-                    
-                    if not (from_trusted and is_breaking):
-                        continue
-                        
-                    send_telegram(
-                        f"📰 <b>{symbol}</b>\n"
-                        f"<a href='{link}'>{title}</a>\n"
-                        f"🕐 {pub_str}"
+                month_str = parts[0]
+                day_str = parts[1].split('-')[-1]
+
+                if month_str not in months:
+                    continue
+
+                event_date = date(int(year), months[month_str], int(day_str))
+                days_until = (event_date - today).days
+
+                if 0 <= days_until <= 7:
+                    alerts.append(
+                        f"🏦 <b>FOMC利率决议</b>\n"
+                        f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"📌 美联储利率决定，市场波动极大"
                     )
-                    
+            except:
+                continue
+
     except Exception as e:
-        print(f"私有公司新闻检查失败: {e}")
+        print(f"FOMC日期获取失败: {e}")
+
+    try:
+        cpi_url = "https://www.bls.gov/schedule/news_release/cpi.htm"
+        response = requests.get(cpi_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+
+        cpi_dates = re.findall(r'(\w+ \d{1,2},\s*\d{4})', response.text)
+
+        for date_str in cpi_dates:
+            try:
+                event_date = datetime.datetime.strptime(date_str.strip(), "%B %d, %Y").date()
+                days_until = (event_date - today).days
+
+                if 0 <= days_until <= 7:
+                    alerts.append(
+                        f"📈 <b>CPI通胀数据发布</b>\n"
+                        f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"📌 消费者价格指数，影响美联储政策预期"
+                    )
+            except:
+                continue
+
+    except Exception as e:
+        print(f"CPI日期获取失败: {e}")
+
+    if alerts:
+        send_telegram("\n\n".join(alerts))
+    else:
+        print("未来7天无重大经济事件")
 
 import sys
 
 if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else "news"
-    
+    mode = sys.argv[1] if len(sys.argv) > 1 else "earnings"
+
     if mode == "earnings":
         check_earnings()
-    else:
-        check_news()
-        check_private_companies() 
+        check_witching_days()
+        check_economic_events()
