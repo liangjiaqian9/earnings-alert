@@ -155,6 +155,7 @@ def check_economic_events():
     today = date.today()
     alerts = []
 
+    # FOMC
     try:
         fomc_url = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
         response = requests.get(fomc_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
@@ -193,6 +194,7 @@ def check_economic_events():
     except Exception as e:
         print(f"FOMC日期获取失败: {e}")
 
+    # CPI
     try:
         cpi_url = "https://www.bls.gov/schedule/news_release/cpi.htm"
         response = requests.get(cpi_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
@@ -215,6 +217,36 @@ def check_economic_events():
 
     except Exception as e:
         print(f"CPI日期获取失败: {e}")
+
+    # PCE
+    try:
+        pce_url = "https://www.bea.gov/news/schedule"
+        response = requests.get(pce_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+
+        pce_dates = re.findall(r'Personal Income[^<]*<[^>]*>([^<]*\d{4}[^<]*)<', response.text)
+
+        if not pce_dates:
+            pce_dates = re.findall(r'(\w+ \d{1,2},\s*\d{4})', response.text)
+
+        for date_str in pce_dates:
+            try:
+                clean = re.search(r'\w+ \d{1,2},\s*\d{4}', date_str)
+                if not clean:
+                    continue
+                event_date = datetime.datetime.strptime(clean.group().strip(), "%B %d, %Y").date()
+                days_until = (event_date - today).days
+
+                if 0 <= days_until <= 7:
+                    alerts.append(
+                        f"💰 <b>PCE物价指数发布</b>\n"
+                        f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"📌 美联储最看重的通胀指标，直接影响利率决策"
+                    )
+            except:
+                continue
+
+    except Exception as e:
+        print(f"PCE日期获取失败: {e}")
 
     if alerts:
         send_telegram("\n\n".join(alerts))
