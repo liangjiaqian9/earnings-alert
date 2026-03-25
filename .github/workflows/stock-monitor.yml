@@ -3,7 +3,6 @@ name: Stock Monitor
 on:
   schedule:
     - cron: '0 13 * * 1-5'
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -21,16 +20,8 @@ jobs:
     - name: Install dependencies
       run: pip install requests yfinance
 
-    - name: Run earnings check (每天早上9点)
-      if: github.event.schedule == '0 13 * * 1-5' || github.event_name == 'workflow_dispatch'
+    - name: Run earnings and witching day check
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       run: python monitor.py earnings
-
-    - name: Run news check (每30分钟)
-      if: github.event.schedule == '*/30 * * * *' || github.event_name == 'workflow_dispatch'
-      env:
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-      run: python monitor.py news
