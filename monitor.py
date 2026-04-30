@@ -65,6 +65,8 @@ EXTRA_WATCHLIST = [
     "BWXT",   # BWX Technologies
     "GCT",    # GigaCloud Technology
     "HIMX",   # Himax Technologies
+    "ONTO",   # 光学检查设备
+    "CAMT",   # 光学检查设备
 ]
 
 def get_watchlist():
