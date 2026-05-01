@@ -107,8 +107,11 @@ def check_earnings():
             print(f"财报检查失败 {symbol}: {e}")
 
     if alerts:
+        # 按日期排序
+        alerts.sort(key=lambda x: x[0])
+        sorted_alerts = [msg for _, msg in alerts]
         header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
-        send_telegram(header + "\n\n".join(alerts))
+        send_telegram(header + "\n\n".join(sorted_alerts))
     else:
         print("未来7天无财报")
 
@@ -142,11 +145,12 @@ def check_witching_days():
                 witching_type = "⚠️ <b>月度期权到期日（Monthly Opex）</b>"
                 desc = "月度期权到期，市场可能出现异常波动"
 
-            alerts.append(
-                f"{witching_type}\n"
-                f"📅 日期：{third_friday}（{days_until}天后）\n"
-                f"📌 {desc}"
-            )
+            if 0 <= days_until <= 7:
+                    alerts.append((ed_date, 
+                        f"📊 <b>{symbol}</b> 财报即将发布！\n"
+                        f"📅 日期：{ed_date}\n"
+                        f"⏰ 还有 {days_until} 天"
+                    ))
 
     if alerts:
         send_telegram("\n\n".join(alerts))
