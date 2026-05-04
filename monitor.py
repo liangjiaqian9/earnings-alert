@@ -19,8 +19,27 @@ def get_sp500():
     try:
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-        tickers = re.findall(r'<td><a href="/wiki/[^"]*" title="[^"]*">([A-Z.]{1,5})</a></td>', response.text)
-        return list(set(tickers))
+
+        tickers = re.findall(r'<td><a href="/wiki/[^"]*" title="[^"]*">([A-Z]{1,5})</a></td>', response.text)
+
+        if len(tickers) < 400:
+            print(f"第一种方法只抓到{len(tickers)}支，尝试备用方法...")
+            tickers = re.findall(r'symbol=([A-Z]{1,5})"', response.text)
+
+        if len(tickers) < 400:
+            print(f"第二种方法只抓到{len(tickers)}支，尝试第三种方法...")
+            import pandas as pd
+            tables = pd.read_html(url)
+            for table in tables:
+                if 'Symbol' in table.columns:
+                    tickers = table['Symbol'].tolist()
+                    break
+
+        tickers = [t for t in tickers if t and 1 <= len(t) <= 5]
+        tickers = list(set(tickers))
+        print(f"S&P500抓取结果: {len(tickers)}支")
+        return tickers
+
     except Exception as e:
         print(f"获取S&P500列表失败: {e}")
         return []
@@ -60,13 +79,13 @@ EXTRA_WATCHLIST = [
     "MELI", "TTD", "WDAY",
     # 新增
     "OSS", "POET", "NOVT", "TMDX", "ZBRA",
-    "SEDG",   # SolarEdge Technologies
-    "PI",     # Impinj
-    "BWXT",   # BWX Technologies
-    "GCT",    # GigaCloud Technology
-    "HIMX",   # Himax Technologies
-    "ONTO",   # 光学检查设备
-    "CAMT",   # 光学检查设备
+    "SEDG",
+    "PI",
+    "BWXT",
+    "GCT",
+    "HIMX",
+    "ONTO",
+    "CAMT",
 ]
 
 def get_watchlist():
@@ -98,18 +117,24 @@ def check_earnings():
                 days_until = (ed_date - today).days
 
                 if 0 <= days_until <= 7:
-                    alerts.append(
+                    alerts.append((ed_date,
                         f"📊 <b>{symbol}</b> 财报即将发布！\n"
                         f"📅 日期：{ed_date}\n"
                         f"⏰ 还有 {days_until} 天"
-                    )
+                    ))
         except Exception as e:
             print(f"财报检查失败 {symbol}: {e}")
 
     if alerts:
-        # 按日期排序
-        alerts.sort(key=lambda x: x[0])
-        sorted_alerts = [msg for _, msg in alerts]
+        valid_alerts = []
+        for item in alerts:
+            if isinstance(item, tuple) and len(item) == 2:
+                valid_alerts.append(item)
+            else:
+                valid_alerts.append((today, item))
+
+        valid_alerts.sort(key=lambda x: x[0])
+        sorted_alerts = [msg for _, msg in valid_alerts]
         header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
         send_telegram(header + "\n\n".join(sorted_alerts))
     else:
@@ -145,12 +170,11 @@ def check_witching_days():
                 witching_type = "⚠️ <b>月度期权到期日（Monthly Opex）</b>"
                 desc = "月度期权到期，市场可能出现异常波动"
 
-            if 0 <= days_until <= 7:
-                    alerts.append((ed_date, 
-                        f"📊 <b>{symbol}</b> 财报即将发布！\n"
-                        f"📅 日期：{ed_date}\n"
-                        f"⏰ 还有 {days_until} 天"
-                    ))
+            alerts.append(
+                f"{witching_type}\n"
+                f"📅 日期：{third_friday}（{days_until}天后）\n"
+                f"📌 {desc}"
+            )
 
     if alerts:
         send_telegram("\n\n".join(alerts))
