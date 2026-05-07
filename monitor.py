@@ -79,13 +79,7 @@ EXTRA_WATCHLIST = [
     "MELI", "TTD", "WDAY",
     # 新增
     "OSS", "POET", "NOVT", "TMDX", "ZBRA",
-    "SEDG",
-    "PI",
-    "BWXT",
-    "GCT",
-    "HIMX",
-    "ONTO",
-    "CAMT",
+    "SEDG", "PI", "BWXT", "GCT", "HIMX",
 ]
 
 def get_watchlist():
@@ -93,6 +87,23 @@ def get_watchlist():
     combined = list(set(sp500 + EXTRA_WATCHLIST))
     print(f"总监控股票数: {len(combined)}")
     return combined
+
+def get_earnings_time(symbol):
+    """从Earnings Whispers获取财报时间（盘前/盘后）"""
+    try:
+        url = f"https://www.earningswhispers.com/stocks/{symbol.lower()}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+
+        text = response.text.lower()
+        if "before open" in text or "before the open" in text:
+            return "盘前 🌅（温哥华凌晨 4:00-6:00）"
+        elif "after close" in text or "after the close" in text:
+            return "盘后 🌙（温哥华下午 1:00-2:00）"
+        else:
+            return "时间待定 🕐"
+    except:
+        return "时间待定 🕐"
 
 def check_earnings():
     today = date.today()
@@ -117,9 +128,14 @@ def check_earnings():
                 days_until = (ed_date - today).days
 
                 if 0 <= days_until <= 7:
+                    if days_until <= 1:
+                        earnings_time = get_earnings_time(symbol)
+                    else:
+                        earnings_time = "时间待定 🕐（临近时更新）"
                     alerts.append((ed_date,
                         f"📊 <b>{symbol}</b> 财报即将发布！\n"
                         f"📅 日期：{ed_date}\n"
+                        f"🕐 {earnings_time}\n"
                         f"⏰ 还有 {days_until} 天"
                     ))
         except Exception as e:
@@ -173,6 +189,7 @@ def check_witching_days():
             alerts.append(
                 f"{witching_type}\n"
                 f"📅 日期：{third_friday}（{days_until}天后）\n"
+                f"🕐 温哥华时间：下午 1:00（市场收盘）\n"
                 f"📌 {desc}"
             )
 
@@ -216,6 +233,7 @@ def check_economic_events():
                     alerts.append(
                         f"🏦 <b>FOMC利率决议</b>\n"
                         f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"🕐 温哥华时间：下午 11:00\n"
                         f"📌 美联储利率决定，市场波动极大"
                     )
             except:
@@ -240,6 +258,7 @@ def check_economic_events():
                     alerts.append(
                         f"📈 <b>CPI通胀数据发布</b>\n"
                         f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"🕐 温哥华时间：早上 5:30\n"
                         f"📌 消费者价格指数，影响美联储政策预期"
                     )
             except:
@@ -270,6 +289,7 @@ def check_economic_events():
                     alerts.append(
                         f"💰 <b>PCE物价指数发布</b>\n"
                         f"📅 日期：{event_date}（{days_until}天后）\n"
+                        f"🕐 温哥华时间：早上 5:30\n"
                         f"📌 美联储最看重的通胀指标，直接影响利率决策"
                     )
             except:
