@@ -89,19 +89,24 @@ def get_watchlist():
     return combined
 
 def get_earnings_time(symbol):
-    """从Earnings Whispers获取财报时间（盘前/盘后）"""
     try:
-        url = f"https://www.earningswhispers.com/stocks/{symbol.lower()}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers, timeout=10)
+        import yfinance as yf
+        ticker = yf.Ticker(symbol)
 
-        text = response.text.lower()
-        if "before open" in text or "before the open" in text:
-            return "盘前 🌅（温哥华凌晨 4:00-6:00）"
-        elif "after close" in text or "after the close" in text:
-            return "盘后 🌙（温哥华下午 1:00-2:00）"
-        else:
-            return "时间待定 🕐"
+        if hasattr(ticker, 'earnings_dates') and ticker.earnings_dates is not None:
+            df = ticker.earnings_dates
+            if not df.empty:
+                today = date.today()
+                for idx in df.index:
+                    idx_date = idx.date() if hasattr(idx, 'date') else idx
+                    if abs((idx_date - today).days) <= 1:
+                        hour = idx.hour if hasattr(idx, 'hour') else None
+                        if hour is not None:
+                            if hour < 12:
+                                return "盘前 🌅"
+                            else:
+                                return "盘后 🌙"
+        return "时间待定 🕐"
     except:
         return "时间待定 🕐"
 
