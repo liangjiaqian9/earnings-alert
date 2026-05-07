@@ -101,13 +101,15 @@ def get_earnings_time(symbol):
                     idx_date = idx.date() if hasattr(idx, 'date') else idx
                     if abs((idx_date - today).days) <= 1:
                         hour = idx.hour if hasattr(idx, 'hour') else None
+                        print(f"{symbol} 财报时间戳: {idx}, hour={hour}")  # 加这行
                         if hour is not None:
                             if hour < 12:
                                 return "盘前 🌅"
                             else:
                                 return "盘后 🌙"
         return "时间待定 🕐"
-    except:
+    except Exception as e:
+        print(f"{symbol} get_earnings_time错误: {e}")
         return "时间待定 🕐"
 
 def check_earnings():
