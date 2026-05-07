@@ -88,7 +88,6 @@ def get_earnings_time(symbol):
         import yfinance as yf
         ticker = yf.Ticker(symbol)
 
-        # 第一步：yfinance earnings_dates
         if hasattr(ticker, 'earnings_dates') and ticker.earnings_dates is not None:
             df = ticker.earnings_dates
             if not df.empty:
@@ -103,22 +102,11 @@ def get_earnings_time(symbol):
                             else:
                                 return "盘后 🌙"
 
-        # 第二步：Yahoo Finance备用
-        url = f"https://finance.yahoo.com/quote/{symbol}/"
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-        response = requests.get(url, headers=headers, timeout=10)
-        text = response.text.lower()
-
-        if "before market open" in text or "earnings before market open" in text:
-            return "盘前 🌅"
-        elif "after market close" in text or "earnings after market close" in text:
-            return "盘后 🌙"
-
-        return "时间待定 🕐"
+        return "盘前 🌅（可核实）"
 
     except Exception as e:
         print(f"{symbol} get_earnings_time错误: {e}")
-        return "时间待定 🕐"
+        return "盘前 🌅（可核实）"
 
 def check_earnings():
     today = date.today()
