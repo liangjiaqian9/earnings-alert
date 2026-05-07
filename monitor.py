@@ -102,11 +102,11 @@ def get_earnings_time(symbol):
                             else:
                                 return "盘后 🌙"
 
-        return "盘前 🌅（可核实）"
+        return "盘前 🌅"
 
     except Exception as e:
         print(f"{symbol} get_earnings_time错误: {e}")
-        return "盘前 🌅（可核实）"
+        return "盘前 🌅"
 
 def check_earnings():
     today = date.today()
@@ -135,7 +135,9 @@ def check_earnings():
                         earnings_time = get_earnings_time(symbol)
                     else:
                         earnings_time = "时间待定 🕐（临近时更新）"
-                    alerts.append((ed_date,
+                    # 排序键：日期为第一优先，盘前(0)排盘后(1)前
+                    time_order = 0 if "盘前" in earnings_time else 1
+                    alerts.append((ed_date, time_order,
                         f"📊 <b>{symbol}</b> 财报即将发布！\n"
                         f"📅 日期：{ed_date}\n"
                         f"🕐 {earnings_time}\n"
@@ -147,13 +149,13 @@ def check_earnings():
     if alerts:
         valid_alerts = []
         for item in alerts:
-            if isinstance(item, tuple) and len(item) == 2:
+            if isinstance(item, tuple) and len(item) == 3:
                 valid_alerts.append(item)
             else:
-                valid_alerts.append((today, item))
+                valid_alerts.append((today, 1, item))
 
-        valid_alerts.sort(key=lambda x: x[0])
-        sorted_alerts = [msg for _, msg in valid_alerts]
+        valid_alerts.sort(key=lambda x: (x[0], x[1]))
+        sorted_alerts = [msg for _, _, msg in valid_alerts]
         header = f"🔔 <b>未来7天财报提醒</b>（{today}）\n\n"
         send_telegram(header + "\n\n".join(sorted_alerts))
     else:
