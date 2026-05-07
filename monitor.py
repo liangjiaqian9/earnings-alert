@@ -95,18 +95,22 @@ def get_earnings_time(symbol):
 
         if hasattr(ticker, 'earnings_dates') and ticker.earnings_dates is not None:
             df = ticker.earnings_dates
+            print(f"{symbol} earnings_dates内容: {df.head(3)}")  # 加这行
             if not df.empty:
                 today = date.today()
                 for idx in df.index:
                     idx_date = idx.date() if hasattr(idx, 'date') else idx
                     if abs((idx_date - today).days) <= 1:
                         hour = idx.hour if hasattr(idx, 'hour') else None
-                        print(f"{symbol} 财报时间戳: {idx}, hour={hour}")  # 加这行
+                        print(f"{symbol} 财报时间戳: {idx}, hour={hour}")
                         if hour is not None:
                             if hour < 12:
                                 return "盘前 🌅"
                             else:
                                 return "盘后 🌙"
+        else:
+            print(f"{symbol} earnings_dates为空或不存在")
+
         return "时间待定 🕐"
     except Exception as e:
         print(f"{symbol} get_earnings_time错误: {e}")
