@@ -17,29 +17,24 @@ def send_telegram(message):
 
 def get_sp500():
     try:
+        import pandas as pd
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-
-        tickers = re.findall(r'<td><a href="/wiki/[^"]*" title="[^"]*">([A-Z]{1,5})</a></td>', response.text)
-
-        if len(tickers) < 400:
-            print(f"第一种方法只抓到{len(tickers)}支，尝试备用方法...")
-            tickers = re.findall(r'symbol=([A-Z]{1,5})"', response.text)
-
-        if len(tickers) < 400:
-            print(f"第二种方法只抓到{len(tickers)}支，尝试第三种方法...")
-            import pandas as pd
-            tables = pd.read_html(url)
-            for table in tables:
-                if 'Symbol' in table.columns:
-                    tickers = table['Symbol'].tolist()
-                    break
-
-        tickers = [t for t in tickers if t and 1 <= len(t) <= 5]
-        tickers = list(set(tickers))
-        print(f"S&P500抓取结果: {len(tickers)}支")
-        return tickers
-
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+        }
+        response = requests.get(url, headers=headers)
+        tables = pd.read_html(response.text)
+        for table in tables:
+            if 'Symbol' in table.columns:
+                tickers = table['Symbol'].tolist()
+                tickers = [t for t in tickers if t and 1 <= len(str(t)) <= 5]
+                tickers = list(set(tickers))
+                print(f"S&P500抓取结果: {len(tickers)}支")
+                return tickers
+        print("找不到Symbol列")
+        return []
     except Exception as e:
         print(f"获取S&P500列表失败: {e}")
         return []
@@ -93,25 +88,34 @@ def get_earnings_time(symbol):
         import yfinance as yf
         ticker = yf.Ticker(symbol)
 
+        # 第一步：yfinance earnings_dates
         if hasattr(ticker, 'earnings_dates') and ticker.earnings_dates is not None:
             df = ticker.earnings_dates
-            print(f"{symbol} earnings_dates内容: {df.head(3)}")  # 加这行
             if not df.empty:
                 today = date.today()
                 for idx in df.index:
                     idx_date = idx.date() if hasattr(idx, 'date') else idx
                     if abs((idx_date - today).days) <= 1:
                         hour = idx.hour if hasattr(idx, 'hour') else None
-                        print(f"{symbol} 财报时间戳: {idx}, hour={hour}")
                         if hour is not None:
                             if hour < 12:
                                 return "盘前 🌅"
                             else:
                                 return "盘后 🌙"
-        else:
-            print(f"{symbol} earnings_dates为空或不存在")
+
+        # 第二步：Yahoo Finance备用
+        url = f"https://finance.yahoo.com/quote/{symbol}/"
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        response = requests.get(url, headers=headers, timeout=10)
+        text = response.text.lower()
+
+        if "before market open" in text or "before open" in text:
+            return "盘前 🌅"
+        elif "after market close" in text or "after hours" in text or "after close" in text:
+            return "盘后 🌙"
 
         return "时间待定 🕐"
+
     except Exception as e:
         print(f"{symbol} get_earnings_time错误: {e}")
         return "时间待定 🕐"
