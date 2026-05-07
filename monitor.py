@@ -109,9 +109,9 @@ def get_earnings_time(symbol):
         response = requests.get(url, headers=headers, timeout=10)
         text = response.text.lower()
 
-        if "before market open" in text or "before open" in text:
+        if "before market open" in text or "earnings before market open" in text:
             return "盘前 🌅"
-        elif "after market close" in text or "after hours" in text or "after close" in text:
+        elif "after market close" in text or "earnings after market close" in text:
             return "盘后 🌙"
 
         return "时间待定 🕐"
