@@ -53,7 +53,7 @@ EXTRA_WATCHLIST = [
     # 储能
     "EOSE",
     # 光互联/光纤
-    "COHR", "LITE", "VIAV", "AAOI", "GLW",
+    "COHR", "LITE", "VIAV", "AAOI", "GLW", "AEHR",
     # 网络安全
     "CRWD", "PANW",
     # 数据中心冷却
