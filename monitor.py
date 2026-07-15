@@ -43,7 +43,7 @@ EXTRA_WATCHLIST = [
     # 美股七巨头
     "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
     # AI芯片/硬件
-    "AMD", "INTC", "QCOM", "ARM", "AVGO", "MRVL",
+    "AMD", "INTC", "QCOM", "ARM", "AVGO", "MRVL", "NVTS", "TSEM", "CBRS",
     # AI软件/云平台
     "CRM", "NOW", "PLTR", "AI", "BBAI", "SOUN", "RXRX",
     # AI基础设施/服务器
@@ -53,7 +53,7 @@ EXTRA_WATCHLIST = [
     # 储能
     "EOSE",
     # 光互联/光纤
-    "COHR", "LITE", "VIAV", "AAOI", "GLW", "AEHR",
+    "COHR", "LITE", "VIAV", "AAOI", "GLW", "AEHR", "AXTI",
     # 网络安全
     "CRWD", "PANW",
     # 数据中心冷却
@@ -67,14 +67,16 @@ EXTRA_WATCHLIST = [
     # AI应用
     "ORCL", "APP", "TEM", "PATH", "DUOL", "SHOP", "CRCL",
     # AI算力/挖矿
-    "IREN",
+    "IREN", "NBIS",
     # 手术机器人/医疗
     "ISRG",
     # 其他高成长
     "MELI", "TTD", "WDAY",
     # 新增
     "OSS", "POET", "NOVT", "TMDX", "ZBRA",
-    "SEDG", "PI", "BWXT", "GCT", "HIMX",
+    "SEDG", "PI", "BWXT", "GCT", "HIMX", "RKLB", "IONQ", "SPCX", "OUST", "RELX", "VPG", "VCX", "MXL",
+    "EWY", "VICR", "HPS.A", "TER", "FORM", "ALAB", "ONTO", "GFS", "MTSI", "SMTC", "CLS",
+    "CAMT", "FN", "TEL", "FLNC", "COST", "DUOL", "PI", "VPG",
 ]
 
 def get_watchlist():
